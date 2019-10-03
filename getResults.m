@@ -15,28 +15,80 @@
 %   hypothesis
 
 %%  1. Init 
+
+clear;
+clc;
+close all;
+instrreset;
+
 % Data generation parameters
-cleanBuild = 1;
-samples = 1000;
+cleanBuild = 0;
 
 
 
 %%  2. Capture Data (Optional)
 if (cleanBuild == 1)
-    labels = {'rock', 'paper', 'scissors'};
-    gestureData = cell(3, 10);
+    samples = 1000;
+    features = 2;   
+    examplesPerCat = 2;
     
-    for i = 1:3
+%     labels = {'rock', 'paper', 'scissors'};
+    labels = {'left', 'right'};
+    
+    categories = length(labels);
+    
+    
+    xData = cell(examplesPerCat, categories);
+    yData = zeros(examplesPerCat, categories);
+    
+    for i = 1:categories
         fprintf("Next Gesture: %s. READY?\n", labels{i});
         pause(2);
-        for m = 1:10
+        for m = 1:examplesPerCat
             disp("Next Example");
-            gestureData{i, m} = generateData(samples);
+            xData{m,i} = generateData(samples);
+            yData(m,i) = i;
         end
     end
     
-    savefile = 'data.mat';
-    save(savefile, 'gestureData');
+    xData = reshape(xData,categories*examplesPerCat,1);
+    yData = categorical( reshape(yData,categories*examplesPerCat,1) );
+    
+    filename = ["data/" + num2str(now) + ".mat"];
+    fprintf('Saving [xData, yData] from session in %s\n.', filename);
+    save(filename, 'xData', 'yData');
+    
 end
 
-%%  2.5 Construct deep learning model in Matlab Class
+%%  2.5 Construct deep learning model
+load('data/737701.6178.mat');
+
+inputSize = 2;
+numHiddenUnits = 100;
+numClasses = 2;
+
+layers = [ ...
+    sequenceInputLayer(inputSize)
+    bilstmLayer(numHiddenUnits,'OutputMode','last')
+    fullyConnectedLayer(numClasses)
+    softmaxLayer
+    classificationLayer];
+
+maxEpochs = 100;
+miniBatchSize = 1;
+
+options = trainingOptions('adam', ...
+    'ExecutionEnvironment','cpu', ...
+    'GradientThreshold',1, ...
+    'MaxEpochs',maxEpochs, ...
+    'MiniBatchSize',miniBatchSize, ...
+    'SequenceLength','longest', ...
+    'Shuffle','never', ...
+    'Verbose',0, ...
+    'Plots','training-progress');
+
+xTrain = xData(1);
+yTrain = yData(1);
+
+net = trainNetwork(xTrain,yTrain,layers,options);
+
