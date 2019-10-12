@@ -75,15 +75,17 @@ title(titleStr);
 
 % Show those same features normalised for that one sample.
 for i = 1:features
-    featureSamples = xData{randIndex}(i,:);
-    featureMax = max(featureSamples);
-    featureMean = mean(featureSamples);
-    
-    xDataNormed(i,:) = featureSamples/ featureMax;
-    
+    for j = 1:captures
+        
+        featureSamples = xData{j}(i,:);
+        featureMax = max(featureSamples);
+        featureMean = mean(featureSamples);
+        
+        xDataNormed{j}(i,:) = featureSamples/ featureMax;
+    end
 end
 figure;
-plot(1:samples, xDataNormed, 'ro');
+plot(1:samples, xDataNormed{randIndex}, 'ro');
 grid on;
 xlabel('Sample #');
 ylabel('Normed Value');
@@ -108,24 +110,33 @@ layers = [ ...
     softmaxLayer
     classificationLayer];
 
-maxEpochs = 100;
-miniBatchSize = 128;
+maxEpochs = 3000;
+miniBatchSize = 100;
 
 options = trainingOptions('adam', ...
-    'ExecutionEnvironment','cpu', ...
+    'ExecutionEnvironment','gpu', ...
     'GradientThreshold',1, ...
     'MaxEpochs',maxEpochs, ...
     'MiniBatchSize',miniBatchSize, ...
     'SequenceLength','longest', ...
-    'Shuffle','never', ...
+    'Shuffle','once', ...
     'Verbose',1, ...
-    'Plots','training-progress');
+    'Plots','training-progress', ...
+    'OutputFcn',@(info)saveTrainingPlot(info));
 
-trainIdx = 0.8*length(xData);
-valIdx = length(xData);
 
-xTrain = xDataNormed(1:trainIdx);
-yTrain = yData(1:trainIdx);
+% Randomize dataset
+idx = randperm(captures);
+splitIdx = round(P*captures);
 
-net = trainNetwork(xTrain,yTrain,layers,options);
+xTrain = xDataNormed(idx(1:splitIdx));
+yTrain = yData(idx(1:splitIdx));
 
+% net = trainNetwork(xTrain,yTrain,layers,options);
+
+% Validate trained data
+xTest = xDataNormed(idx(splitIdx+1:end));
+yTest = yData(idx(splitIdx+1:end));
+
+yPred = classify(net,xTest);
+plotconfusion(yTest, yPred);
