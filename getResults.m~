@@ -61,7 +61,7 @@ load('data/737701.6431.mat');
 
 %% Visualise Data
 close all;
-rng(3,'twister');
+rng(0,'twister');
 randIndex = randi([0, captures],1,1);
 
 % Show an example of a capture
@@ -90,14 +90,16 @@ ylabel('Normed Value');
 titleStr = ["NORMED feature values against t (s/div), capture #", randIndex];
 title(titleStr);
 
+% Show the log graph for that sam
+
 
 
 %%  2.5 Construct deep learning model
 % load('data/737701.6178.mat');
 
+inputSize = 2;
 numHiddenUnits = 10;
-numClasses = categories;
-inputSize = features;
+numClasses = 2;
 
 layers = [ ...
     sequenceInputLayer(inputSize)
