@@ -99,6 +99,8 @@ numHiddenUnits = 10;
 numClasses = categories;
 inputSize = features;
 
+gpu1 = gpuDevice(1)
+
 layers = [ ...
     sequenceInputLayer(inputSize)
     bilstmLayer(numHiddenUnits,'OutputMode','last')
@@ -107,7 +109,7 @@ layers = [ ...
     classificationLayer];
 
 maxEpochs = 100;
-miniBatchSize = 2;
+miniBatchSize = 128;
 
 options = trainingOptions('adam', ...
     'ExecutionEnvironment','cpu', ...
@@ -122,7 +124,7 @@ options = trainingOptions('adam', ...
 trainIdx = 0.8*length(xData);
 valIdx = length(xData);
 
-xTrain = xData(1:trainIdx);
+xTrain = xDataNormed(1:trainIdx);
 yTrain = yData(1:trainIdx);
 
 net = trainNetwork(xTrain,yTrain,layers,options);
