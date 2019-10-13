@@ -30,6 +30,8 @@ labels = {'left', 'right'};
 categories = length(labels);
 captures = categories*examplesPerCat;
 
+filenameBase = num2str(now);
+
 
 %%  2. Capture Data (Optional)
 if (cleanBuild == 1)
@@ -51,7 +53,7 @@ if (cleanBuild == 1)
     xData = reshape(xData,categories*examplesPerCat,1);
     yData = categorical( reshape(yData,categories*examplesPerCat,1) );
     
-    filename = ["data/" + num2str(now) + ".mat"];
+    filename = ["data/" + filenameBase + ".mat"];
     fprintf('Saving [xData, yData] from session in %s\n.', filename);
     save(filename, 'xData', 'yData');
     
@@ -97,7 +99,7 @@ title(titleStr);
 %%  2.5 Construct deep learning model
 % load('data/737701.6178.mat');
 
-numHiddenUnits = 10;
+numHiddenUnits = 15;
 numClasses = categories;
 inputSize = features;
 
@@ -110,7 +112,7 @@ layers = [ ...
     softmaxLayer
     classificationLayer];
 
-maxEpochs = 3000;
+maxEpochs = 10000;
 miniBatchSize = 100;
 
 options = trainingOptions('adam', ...
@@ -127,12 +129,13 @@ options = trainingOptions('adam', ...
 
 % Randomize dataset
 idx = randperm(captures);
+P = .8;
 splitIdx = round(P*captures);
 
 xTrain = xDataNormed(idx(1:splitIdx));
 yTrain = yData(idx(1:splitIdx));
 
-% net = trainNetwork(xTrain,yTrain,layers,options);
+net = trainNetwork(xTrain,yTrain,layers,options);
 
 % Validate trained data
 xTest = xDataNormed(idx(splitIdx+1:end));
