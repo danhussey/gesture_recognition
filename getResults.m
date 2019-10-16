@@ -23,17 +23,20 @@ instrreset;
 
 % Data generation parameters
 cleanBuild = 0;
+cleanModel = 0;
 samples = 1000;
-features = 2;
-examplesPerCat = 50;
-labels = {'left', 'right'};
+features = 4;
+examplesPerCat = 20;
+labels = {'left', 'right', 'none'};
 categories = length(labels);
 captures = categories*examplesPerCat;
 
 
 %%  2. Capture Data (Optional)
-if (cleanBuild == 1)
+if (cleanBuild == 0)
+    load('data/737713.9615.mat');
     
+elseif (cleanBuild == 1)
     
     xData = cell(examplesPerCat, categories);
     yData = zeros(examplesPerCat, categories);
@@ -43,7 +46,7 @@ if (cleanBuild == 1)
         pause(2);
         for m = 1:examplesPerCat
             disp("Next Example");
-            xData{m,i} = generateData(samples);
+            xData{m,i} = generateData(samples, features);
             yData(m,i) = i;
         end
     end
@@ -56,8 +59,6 @@ if (cleanBuild == 1)
     save(filename, 'xData', 'yData');
     
 end
-
-load('data/737701.6431.mat');
 
 %% Visualise Data
 close all;
@@ -74,23 +75,21 @@ titleStr = ["RAW feature values against t (s/div), capture #", randIndex];
 title(titleStr);
 
 % Show those same features normalised for that one sample.
-for i = 1:features
-    for j = 1:captures
-        
-        featureSamples = xData{j}(i,:);
-        featureMax = max(featureSamples);
-        featureMean = mean(featureSamples);
-        
-        xDataNormed{j}(i,:) = featureSamples/ featureMax;
-    end
-end
-figure;
-plot(1:samples, xDataNormed{randIndex}, 'ro');
-grid on;
-xlabel('Sample #');
-ylabel('Normed Value');
-titleStr = ["NORMED feature values against t (s/div), capture #", randIndex];
-title(titleStr);
+% for i = 1:features
+%     featureSamples = xData{randIndex}(i,:);
+%     featureMax = max(featureSamples);
+%     featureMean = mean(featureSamples);
+%     
+%     xDataNormed(i,:) = featureSamples/ featureMax;
+%     
+% end
+% figure;
+% plot(1:samples, xDataNormed, 'ro');
+% grid on;
+% xlabel('Sample #');
+% ylabel('Normed Value');
+% titleStr = ["NORMED feature values against t (s/div), capture #", randIndex];
+% title(titleStr);
 
 
 
@@ -101,7 +100,7 @@ numHiddenUnits = 10;
 numClasses = categories;
 inputSize = features;
 
-gpu1 = gpuDevice(1)
+% gpu1 = gpuDevice(1)
 
 layers = [ ...
     sequenceInputLayer(inputSize)
@@ -123,11 +122,6 @@ options = trainingOptions('adam', ...
     'Verbose',1, ...
     'Plots','training-progress', ...
     'OutputFcn',@(info)saveTrainingPlot(info));
-
-
-% Randomize dataset
-idx = randperm(captures);
-splitIdx = round(P*captures);
 
 xTrain = xDataNormed(idx(1:splitIdx));
 yTrain = yData(idx(1:splitIdx));
