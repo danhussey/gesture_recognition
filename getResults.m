@@ -1,9 +1,9 @@
 %%  What's the minimum I need to code to get the most results done by tomorrow?
 
-%   Hypothesis: 
+%   Hypothesis:
 % Then I need to:
 %   1. Capture several (tonnes) snapshots of two getures moving in front of
-%   the sensor(s), with othervariables being controlled for. Like an 
+%   the sensor(s), with othervariables being controlled for. Like an
 %   experiment.
 %   2. Generate several spectrograms of each digit gesture
 %   2.5 Construct a Deep Learning model in the Matlab toolbox
@@ -14,7 +14,7 @@
 %   your results, how you could do better next time. Refine your
 %   hypothesis
 
-%%  1. Init 
+%%  1. Init
 
 clear;
 clc;
@@ -23,7 +23,7 @@ instrreset;
 
 % Data generation parameters
 cleanBuild = 0;
-cleanModel = 0;
+cleanModel = 1;
 samples = 1000;
 features = 4;
 examplesPerCat = 20;
@@ -66,24 +66,24 @@ end
 close all;
 rng(3,'twister');
 randIndex = randi([0, captures],1,1);
-
-% Show an example of a capture
-figure;
-plot(1:samples, xData{randIndex}, 'ro');
-grid on;
-xlabel('Sample #');
-ylabel('Raw Value');
-titleStr = ["RAW feature values against t (s/div), capture #", randIndex];
-title(titleStr);
+% 
+% % Show an example of a capture
+% figure;
+% plot(1:samples, xData{randIndex}, 'ro');
+% grid on;
+% xlabel('Sample #');
+% ylabel('Raw Value');
+% titleStr = ["RAW feature values against t (s/div), capture #", randIndex];
+% title(titleStr);
 
 % Show those same features normalised for that one sample.
 % for i = 1:features
 %     featureSamples = xData{randIndex}(i,:);
 %     featureMax = max(featureSamples);
 %     featureMean = mean(featureSamples);
-%     
+%
 %     xDataNormed(i,:) = featureSamples/ featureMax;
-%     
+%
 % end
 % figure;
 % plot(1:samples, xDataNormed, 'ro');
@@ -97,52 +97,53 @@ title(titleStr);
 
 %%  2.5 Construct deep learning model
 % load('data/737701.6178.mat');
-
-numHiddenUnits = 15;
-numClasses = categories;
-inputSize = features;
-
-% gpu1 = gpuDevice(1)
-
-layers = [ ...
-    sequenceInputLayer(inputSize)
-    bilstmLayer(numHiddenUnits,'OutputMode','last')
-    fullyConnectedLayer(numClasses)
-    softmaxLayer
-    classificationLayer];
-
-maxEpochs = 10000;
-miniBatchSize = 100;
-
-options = trainingOptions('adam', ...
-    'ExecutionEnvironment','gpu', ...
-    'GradientThreshold',1, ...
-    'MaxEpochs',maxEpochs, ...
-    'MiniBatchSize',miniBatchSize, ...
-    'SequenceLength','longest', ...
-    'Shuffle','once', ...
-    'Verbose',1, ...
-    'Plots','training-progress', ...
-    'OutputFcn',@(info)saveTrainingPlot(info));
-
-% Randomize dataset
-idx = randperm(captures);
-P = .8;
-// splitIdx = round(P*captures);
-
-% Randomize dataset
-idx = randperm(captures);
-P = .8;
-splitIdx = round(P*captures);
-
-xTrain = xDataNormed(idx(1:splitIdx));
-yTrain = yData(idx(1:splitIdx));
-
-net = trainNetwork(xTrain,yTrain,layers,options);
-
-% Validate trained data
-xTest = xDataNormed(idx(splitIdx+1:end));
-yTest = yData(idx(splitIdx+1:end));
-
-yPred = classify(net,xTest);
-plotconfusion(yTest, yPred);
+if (cleanModel)
+    
+    numHiddenUnits = 5;
+    numClasses = categories;
+    inputSize = features;
+    gpu1 = gpuDevice(1)
+    
+    % Randomize and preprocess dataset
+    idx = randperm(captures);
+    P = .8;
+    splitIdx = round(P*captures);
+    
+    xTrain = xData(idx(1:splitIdx));
+    yTrain = yData(idx(1:splitIdx));
+    xTest = xData(idx(splitIdx+1:end));
+    yTest = yData(idx(splitIdx+1:end));
+    
+    layers = [ ...
+        sequenceInputLayer(inputSize)
+        bilstmLayer(numHiddenUnits,'OutputMode','last')
+        fullyConnectedLayer(numClasses)
+        softmaxLayer
+        classificationLayer];
+    
+    maxEpochs = 100;
+    miniBatchSize = 10;
+    
+    options = trainingOptions('adam', ...
+        'ExecutionEnvironment','gpu', ...
+        'GradientThreshold',1, ...
+        'MaxEpochs',maxEpochs, ...
+        'MiniBatchSize',miniBatchSize, ...
+        'SequenceLength','longest', ...
+        'Shuffle','once', ...
+        'Verbose',1, ...
+        'Plots','training-progress', ...
+        'OutputFcn',@(info)saveTrainingPlot(info), ...
+        'ValidationData', {xTest,yTest});
+    
+    
+    
+    net = trainNetwork(xTrain,yTrain,layers,options);
+    save(["models/" + num2str(now) + "_model.mat"], 'net');
+    
+    % Validate trained data
+    yPred = classify(net,xTest);
+    plotconfusion(yTest, yPred);
+    filename = ["plots/" + num2str(now) + "_confusion.eps"];
+    saveas(gcf,filename)  % save figure as .png, you can change this
+end
