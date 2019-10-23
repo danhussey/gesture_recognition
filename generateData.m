@@ -5,7 +5,7 @@ function data = generateData (samples, features)
 
 
 % Open serial connection
-s1 = serial("/dev/cu.usbmodem14201", 'BaudRate', 115200);
+s1 = serial("/dev/cu.usbmodem14101", 'BaudRate', 115200);
 fopen(s1);
 fprintf(s1, '*IDN?');
 idn = fscanf(s1);

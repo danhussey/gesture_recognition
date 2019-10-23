@@ -22,12 +22,12 @@ close all;
 instrreset;
 
 % Data generation parameters
-cleanBuild = 0;
+cleanBuild = 1;
 cleanModel = 0;
-samples = 1000;
-features = 4;
+samples = 500;
+features = 8;
 examplesPerCat = 20;
-labels = {'left', 'right', 'none'};
+labels = {'rock', 'paper', 'scissors'};
 categories = length(labels);
 captures = categories*examplesPerCat;
 

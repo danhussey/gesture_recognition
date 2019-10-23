@@ -5,7 +5,7 @@ close all;
 clear; 
 clc;
 
-features = 4;
+features = 8;
 samples = 1000;
 
 % Open serial connection
@@ -34,11 +34,43 @@ for i = 2:samples
     data(i,1:features)= str2num(dataRaw{i})';
 end
 
-figure;
-plot(1:(samples-1), data(2:end,:));
 
-% spectrogram(data(:,1)'); % See feature 1 
-% figure;
+% Plot 
+figure
+subplot(2,1,1);
+plot(1:(samples), data(1:end,[1,3,5,7]));
+title('Triangular configuration: Voltage out ADC Reading.','interpreter','tex');
+grid on;
+
+xlabel('Sample #');
+ylabel('Square Wave Logicial Value (0 or 1)')
+set(get(gca,'Title'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'XLabel'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'XAxis'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'YLabel'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'YAxis'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'ZLabel'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'ZAxis'),'Fontname','Times','FontSize',12.5);
+subplot(2,1,2);
+plot(1:(samples), data(1:end,[2,4,6,8]));
+
+% spectrogram(data(:,2)'); % See feature 1 
+% view(0,0);
+
+title('Triangular configuration: Voltage out.','interpreter','tex');
+
+colorbar off
+grid on;
+xlabel('Sample #');
+ylabel('ADC Reading');
+set(get(gca,'Title'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'XLabel'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'XAxis'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'YLabel'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'YAxis'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'ZLabel'),'Fontname','Times','FontSize',12.5);
+set(get(gca,'ZAxis'),'Fontname','Times','FontSize',12.5);
+
 % plot(1:end, data(2:end,1));
 % hold on;
 % plot(1:end,data(2:end,2));
