@@ -23,10 +23,10 @@ instrreset;
 
 % Data generation parameters
 cleanBuild = 0;
-cleanModel = 1;
-samples = 500;
-features = 8;
-examplesPerCat = 100;
+cleanModel = 0;
+samples = 1000;
+features = 4;
+examplesPerCat = 20;
 labels = {'left', 'right', 'none'};
 categories = length(labels);
 captures = categories*examplesPerCat;
