@@ -24,9 +24,9 @@ instrreset;
 % Data generation parameters
 cleanBuild = 0;
 cleanModel = 1;
-samples = 1000;
-features = 4;
-examplesPerCat = 20;
+samples = 500;
+features = 8;
+examplesPerCat = 100;
 labels = {'left', 'right', 'none'};
 categories = length(labels);
 captures = categories*examplesPerCat;
@@ -36,7 +36,7 @@ filenameBase = num2str(now);
 
 %%  2. Capture Data (Optional)
 if (cleanBuild == 0)
-    load('data/737713.9615.mat');
+    load('data/737715.9146.mat');
     
 elseif (cleanBuild == 1)
     
@@ -96,13 +96,37 @@ randIndex = randi([0, captures],1,1);
 
 
 %%  2.5 Construct deep learning model
-% load('data/737701.6178.mat');
-if (cleanModel)
+if (~cleanModel)
+%     load('data/737701.6178.mat');
     
-    numHiddenUnits = 5;
+elseif (cleanModel)
+    gpu1 = gpuDevice(1)
+    
+    numHiddenUnits = 20;
     numClasses = categories;
     inputSize = features;
-    gpu1 = gpuDevice(1)
+    
+    layers = [ ...
+        sequenceInputLayer(inputSize)
+        lstmLayer(numHiddenUnits,'OutputMode','last')
+        dropoutLayer(0.2)
+        fullyConnectedLayer(numClasses)
+        softmaxLayer
+        classificationLayer];
+    
+%     inputSize = features;
+%     numHiddenUnits1 = 125;
+%     numHiddenUnits2 = 100;
+%     numClasses = categories;
+%     layers = [ ...
+%         sequenceInputLayer(inputSize)
+%         lstmLayer(numHiddenUnits1,'OutputMode','sequence')
+%         dropoutLayer(0.2)
+%         lstmLayer(numHiddenUnits2,'OutputMode','last')
+%         dropoutLayer(0.2)
+%         fullyConnectedLayer(numClasses)
+%         softmaxLayer
+%         classificationLayer];
     
     % Randomize and preprocess dataset
     idx = randperm(captures);
@@ -114,15 +138,8 @@ if (cleanModel)
     xTest = xData(idx(splitIdx+1:end));
     yTest = yData(idx(splitIdx+1:end));
     
-    layers = [ ...
-        sequenceInputLayer(inputSize)
-        bilstmLayer(numHiddenUnits,'OutputMode','last')
-        fullyConnectedLayer(numClasses)
-        softmaxLayer
-        classificationLayer];
-    
-    maxEpochs = 100;
-    miniBatchSize = 10;
+    maxEpochs = 500;
+    miniBatchSize = 100;
     
     options = trainingOptions('adam', ...
         'ExecutionEnvironment','gpu', ...
@@ -139,11 +156,11 @@ if (cleanModel)
     
     
     net = trainNetwork(xTrain,yTrain,layers,options);
-    save(["models/" + num2str(now) + "_model.mat"], 'net');
+    save(["models/" + num2str(now) + "_model.mat"], 'net', 'options');
     
     % Validate trained data
     yPred = classify(net,xTest);
     plotconfusion(yTest, yPred);
-    filename = ["plots/" + num2str(now) + "_confusion.eps"];
+    filename = ["plots/" + num2str(now) + "_confusion_plot.fig"];
     saveas(gcf,filename)  % save figure as .png, you can change this
 end
