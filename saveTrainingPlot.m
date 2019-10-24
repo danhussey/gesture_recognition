@@ -1,6 +1,12 @@
 % Helper function to save the plot of the trained neural network
 
 function stop=saveTrainingPlot(info)
+% if info.State ~= 'start'
+%     filename = "logs/rh_config_refined_training_log.mat";
+%     storedTrainingData = load(filename);
+%     storedTrainingData(end+1) = info;
+% end
+
 stop=false;  %prevents this function from ending trainNetwork prematurely
 if info.State=='done'   %check if all iterations have completed
     % if true

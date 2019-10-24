@@ -1,21 +1,17 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   Function to visualise the data features from a captured gesture
+visualiseCapture
 
-function visualiseCapture(capture, samples, features, label, liveFlag)
+samples = 500;
+features = 8;
 
-if (liveFlag)
-    data = generateData(samples, features);
-else
-    data = capture;
-end
+data = generateData(samples, features);
 
-% For each sensor
-for sensor = 1:features/2
-    
+ 
 figure
 subplot(2,1,1);
 plot(1:(samples), data(1:end,[1,3,5]));
-title('Right hand configuration: Voltage out ADC Reading. Left swipe gesture.','interpreter','tex');
+title('Right hand configuration: Voltage out ADC Reading. Left swipe gesture.');
 grid on;
 
 xlabel('Sample #');
@@ -31,7 +27,7 @@ set(get(gca,'ZAxis'),'Fontname','Times','FontSize',12.5);
 
 subplot(2,1,2);
 plot(1:(samples), data(1:end,[2,4,6]));
-title('Right hand configuration: PWM out. Left swipe gesture.','interpreter','tex');
+title('Right hand configuration: PWM out. Left swipe gesture.');
 
 colorbar off
 grid on;

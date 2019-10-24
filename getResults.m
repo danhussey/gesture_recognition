@@ -23,11 +23,11 @@ instrreset;
 
 % Data generation parameters
 cleanBuild = 0;
-cleanModel = 0;
+cleanModel = 1;
 samples = 500;
-features = 6;
-examplesPerCat = 150;
-labels = {'rock', 'paper', 'scissors'};
+features = 8;
+examplesPerCat = 100;
+labels = {'left', 'right', 'nothing'};
 categories = length(labels);
 captures = categories*examplesPerCat;
 
@@ -36,7 +36,7 @@ filenameBase = num2str(now) + "rh_config";
 
 %%  2. Capture Data (Optional)
 if (cleanBuild == 0)
-    load('data/737721.9522.mat');
+    load('data/737715.9146.mat');
     
 elseif (cleanBuild == 1)
     
@@ -101,27 +101,34 @@ numClasses = categories;
 inputSize = features;
 
 if (cleanModel)
-% gpu1 = gpuDevice(1)
-layers = [ ...
-    sequenceInputLayer(inputSize)
-    bilstmLayer(numHiddenUnits,'OutputMode','last')
-    fullyConnectedLayer(numClasses)
-    softmaxLayer
-    classificationLayer];
+gpu1 = gpuDevice(1)
 
-maxEpochs = 10000;
+% layers = [ ...
+%     sequenceInputLayer(inputSize)
+%     lstmLayer(numHiddenUnits,'OutputMode','last')
+%     fullyConnectedLayer(numClasses)
+%     softmaxLayer
+%     classificationLayer];
+
+
+maxEpochs = 100;
 miniBatchSize = 100;
 
-options = trainingOptions('adam', ...
-    'ExecutionEnvironment','gpu', ...
-    'GradientThreshold',1, ...
-    'MaxEpochs',maxEpochs, ...
-    'MiniBatchSize',miniBatchSize, ...
-    'SequenceLength','longest', ...
-    'Shuffle','once', ...
-    'Verbose',1, ...
-    'Plots','training-progress', ...
-    'OutputFcn',@(info)saveTrainingPlot(info));
+    inputSize = features;
+    numHiddenUnits1 = 125;
+    numHiddenUnits2 = 100;
+    numClasses = categories;
+    layers = [ ...
+        sequenceInputLayer(inputSize)
+        lstmLayer(numHiddenUnits1,'OutputMode','sequence')
+        dropoutLayer(0.2)
+        lstmLayer(numHiddenUnits2,'OutputMode','last')
+        dropoutLayer(0.2)
+        fullyConnectedLayer(numClasses)
+        softmaxLayer
+        classificationLayer];
+
+
 
 % Randomize dataset
 idx = randperm(captures);
@@ -136,25 +143,39 @@ splitIdx = round(P*captures);
 xTrain = xData(idx(1:splitIdx));
 yTrain = yData(idx(1:splitIdx));
 
-net = trainNetwork(xTrain,yTrain,layers,options);
-
 % Validate trained data
 xTest = xData(idx(splitIdx+1:end));
 yTest = yData(idx(splitIdx+1:end));
 
+options = trainingOptions('adam', ...
+    'ExecutionEnvironment','gpu', ...
+    'GradientThreshold',1, ...
+    'MaxEpochs',maxEpochs, ...
+    'MiniBatchSize',miniBatchSize, ...
+    'SequenceLength','longest', ...
+    'Shuffle','once', ...
+    'Verbose',1, ...
+    'Plots','training-progress', ...
+    'OutputFcn',@(info)saveTrainingPlot(info),...
+    'ValidationData', {xTest, yTest});
+
+net = trainNetwork(xTrain,yTrain,layers,options);
+
 yPred = classify(net,xTest);
 plotconfusion(yTest, yPred);
+filename = ["plots/" + num2str(now) + "_confusion_plot.fig"];
+    saveas(gcf,filename)  % save figure as .png, you can change this
 end
 
 %% Visualie results
-% 
+
 % dims = features/2;
 % 
-% % Visualise all channel data for each category, example picked at random.
+% Visualise all channel data for each category, example picked at random.
 % figure
 % subplot(2,1,1);
-% plot(1:(samples), xData(1:end,[1,3,5]));
-% title('Right hand configuration: Voltage out ADC Reading. Left swipe gesture.','interpreter','tex');
+% plot(1:(samples), xData{1}([1,3,5],1:end));
+% title('Right hand configuration: Voltage out ADC Readings. Left swipe gesture.','interpreter','tex');
 % grid on;
 % 
 % xlabel('Sample #');
@@ -167,9 +188,8 @@ end
 % set(get(gca,'ZLabel'),'Fontname','Times','FontSize',12.5);
 % set(get(gca,'ZAxis'),'Fontname','Times','FontSize',12.5);
 % 
-% 
 % subplot(2,1,2);
-% plot(1:(samples), data(1:end,[2,4,6]));
+% plot(1:(samples), xData{1}([2,4,6],1:end));
 % title('Right hand configuration: PWM out. Left swipe gesture.','interpreter','tex');
 % 
 % colorbar off
@@ -184,8 +204,8 @@ end
 % set(get(gca,'ZLabel'),'Fontname','Times','FontSize',12.5);
 % set(get(gca,'ZAxis'),'Fontname','Times','FontSize',12.5);
 % 
-% % Spectrograms of each channel
-% spectrogram(data(:,2)');
+% Spectrograms of each channel
+% spectrogram(xData{1}([1,3,5],:));
 % view(0,0);
 % set(get(gca,'Title'),'Fontname','Times','FontSize',12.5);
 % set(get(gca,'XLabel'),'Fontname','Times','FontSize',12.5);
@@ -196,4 +216,4 @@ end
 % set(get(gca,'ZAxis'),'Fontname','Times','FontSize',12.5);
 % 
 % 
-
+% 
