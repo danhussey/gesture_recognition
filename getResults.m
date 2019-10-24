@@ -25,18 +25,18 @@ instrreset;
 cleanBuild = 1;
 cleanModel = 0;
 samples = 500;
-features = 8;
-examplesPerCat = 20;
+features = 6;
+examplesPerCat = 150;
 labels = {'rock', 'paper', 'scissors'};
 categories = length(labels);
 captures = categories*examplesPerCat;
 
-filenameBase = num2str(now);
+filenameBase = num2str(now) + "rh_config";
 
 
 %%  2. Capture Data (Optional)
 if (cleanBuild == 0)
-    load('data/737713.9615.mat');
+    load('data/737721.9522.mat');
     
 elseif (cleanBuild == 1)
     
@@ -56,54 +56,52 @@ elseif (cleanBuild == 1)
     xData = reshape(xData,categories*examplesPerCat,1);
     yData = categorical( reshape(yData,categories*examplesPerCat,1) );
     
+end
+
+%% 3 Proprocess Data
+
+for capt = 1:captures
+       
+    for feat = 1:features
+        featureSamples = xData{capt}(feat,:);
+        
+        % Norm the feature and replace the raw values (garbage in garbage
+        % out)
+        if (mod(feat,2) == 0)
+            
+            featureMax = max(featureSamples);
+            featureMean = mean(featureSamples);
+            
+            % Replace feature raw values with normed values
+            xData{capt}(feat,:) = featureSamples/featureMax;
+            
+%             % Add diff from other features
+%             xData(
+%             xData{capt}(end+1,:) = (featurefeature
+        end
+        
+    end
+%     
+%     % Augment with Diffs from capture mean
+%     vOutMeans = mean(xData{capt}([1,3,8],:));
+end
+
+if (cleanBuild)
+    % Save capture
     filename = ["data/" + filenameBase + ".mat"];
-    fprintf('Saving [xData, yData] from session in %s\n.', filename);
-    save(filename, 'xData', 'yData');
+    fprintf('Saving data from capture session in %s\n.', filename);
+    save(filename, 'xData', 'yData', 'features', 'samples', 'labels', 'examplesPerCat', 'captures');
     
 end
 
-%% Visualise Data
-close all;
-rng(3,'twister');
-randIndex = randi([0, captures],1,1);
 
-% Show an example of a capture
-figure;
-plot(1:samples, xData{randIndex}, 'ro');
-grid on;
-xlabel('Sample #');
-ylabel('Raw Value');
-titleStr = ["RAW feature values against t (s/div), capture #", randIndex];
-title(titleStr);
-
-% Show those same features normalised for that one sample.
-% for i = 1:features
-%     featureSamples = xData{randIndex}(i,:);
-%     featureMax = max(featureSamples);
-%     featureMean = mean(featureSamples);
-%     
-%     xDataNormed(i,:) = featureSamples/ featureMax;
-%     
-% end
-% figure;
-% plot(1:samples, xDataNormed, 'ro');
-% grid on;
-% xlabel('Sample #');
-% ylabel('Normed Value');
-% titleStr = ["NORMED feature values against t (s/div), capture #", randIndex];
-% title(titleStr);
-
-
-
-%%  2.5 Construct deep learning model
-% load('data/737701.6178.mat');
-
+ %%  2.5 Construct deep learning model
 numHiddenUnits = 15;
 numClasses = categories;
 inputSize = features;
 
+if (cleanModel)
 % gpu1 = gpuDevice(1)
-
 layers = [ ...
     sequenceInputLayer(inputSize)
     bilstmLayer(numHiddenUnits,'OutputMode','last')
@@ -128,21 +126,74 @@ options = trainingOptions('adam', ...
 % Randomize dataset
 idx = randperm(captures);
 P = .8;
-// splitIdx = round(P*captures);
+splitIdx = round(P*captures);
 
 % Randomize dataset
 idx = randperm(captures);
 P = .8;
 splitIdx = round(P*captures);
 
-xTrain = xDataNormed(idx(1:splitIdx));
+xTrain = xData(idx(1:splitIdx));
 yTrain = yData(idx(1:splitIdx));
 
 net = trainNetwork(xTrain,yTrain,layers,options);
 
 % Validate trained data
-xTest = xDataNormed(idx(splitIdx+1:end));
+xTest = xData(idx(splitIdx+1:end));
 yTest = yData(idx(splitIdx+1:end));
 
 yPred = classify(net,xTest);
 plotconfusion(yTest, yPred);
+end
+
+%% Visualie results
+% 
+% dims = features/2;
+% 
+% % Visualise all channel data for each category, example picked at random.
+% figure
+% subplot(2,1,1);
+% plot(1:(samples), xData(1:end,[1,3,5]));
+% title('Right hand configuration: Voltage out ADC Reading. Left swipe gesture.','interpreter','tex');
+% grid on;
+% 
+% xlabel('Sample #');
+% ylabel('Square Wave Logicial Value')
+% set(get(gca,'Title'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'XLabel'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'XAxis'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'YLabel'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'YAxis'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'ZLabel'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'ZAxis'),'Fontname','Times','FontSize',12.5);
+% 
+% 
+% subplot(2,1,2);
+% plot(1:(samples), data(1:end,[2,4,6]));
+% title('Right hand configuration: PWM out. Left swipe gesture.','interpreter','tex');
+% 
+% colorbar off
+% grid on;
+% xlabel('Sample #');
+% ylabel('ADC Reading');
+% set(get(gca,'Title'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'XLabel'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'XAxis'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'YLabel'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'YAxis'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'ZLabel'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'ZAxis'),'Fontname','Times','FontSize',12.5);
+% 
+% % Spectrograms of each channel
+% spectrogram(data(:,2)');
+% view(0,0);
+% set(get(gca,'Title'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'XLabel'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'XAxis'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'YLabel'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'YAxis'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'ZLabel'),'Fontname','Times','FontSize',12.5);
+% set(get(gca,'ZAxis'),'Fontname','Times','FontSize',12.5);
+% 
+% 
+
