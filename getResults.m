@@ -22,8 +22,8 @@ close all;
 instrreset;
 
 % Data generation parameters
-cleanBuild = 1;
-cleanModel = 0;
+cleanBuild = 0;
+cleanModel = 1;
 samples = 500;
 features = 6;
 examplesPerCat = 100;
@@ -31,12 +31,12 @@ labels = {'paper', 'scissors', 'rock', 'nothing'};
 categories = length(labels);
 captures = categories*examplesPerCat;
 
-filenameBase = num2str(now) + "flat_psr";
+filenameBase = num2str(now) + "flat_psr_larger_network";
 
 
 %%  2. Capture Data (Optional)
 if (cleanBuild == 0)
-    load('data/737722.9685flat_config_left_right.mat');
+    load('data/737723.0706flat_psr.mat');
     
 elseif (cleanBuild == 1)
     
@@ -112,10 +112,9 @@ gpu1 = gpuDevice(1)
 %     classificationLayer];
 
 inputSize = features;
-maxEpochs = 500;
-miniBatchSize = 50;
-numHiddenUnits1 = 10;
-numHiddenUnits2 = 10;
+maxEpochs = 5000;miniBatchSize = 50;
+numHiddenUnits1 = 100;
+numHiddenUnits2 = 100;
 numClasses = categories;
 layers = [ ...
     sequenceInputLayer(inputSize)
@@ -158,7 +157,7 @@ options = trainingOptions('adam', ...
     'OutputFcn',@(info)saveTrainingPlot(info),...
     'ValidationData', {xTest, yTest});
 
-diary flat_config_left_right_3.txt
+diary flat_psr_larger_network
 net = trainNetwork(xTrain,yTrain,layers,options);
 diary off
 
