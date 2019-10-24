@@ -22,16 +22,16 @@ close all;
 instrreset;
 
 % Data generation parameters
-cleanBuild = 0;
-cleanModel = 1;
+cleanBuild = 1;
+cleanModel = 0;
 samples = 500;
-features = 8;
+features = 6;
 examplesPerCat = 100;
-labels = {'left', 'right', 'nothing'};
+labels = {'paper', 'scissors', 'rock', 'nothing'};
 categories = length(labels);
 captures = categories*examplesPerCat;
 
-filenameBase = num2str(now) + "flat_stationary_3";
+filenameBase = num2str(now) + "flat_psr";
 
 
 %%  2. Capture Data (Optional)
@@ -47,7 +47,7 @@ elseif (cleanBuild == 1)
         fprintf("Next Gesture: %s. READY?\n", labels{i});
         pause(2);
         for m = 1:examplesPerCat
-            disp("Next Example");
+            disp("Next Example: " + num2str(m));
             xData{m,i} = generateData(samples, features);
             yData(m,i) = i;
         end
@@ -165,6 +165,7 @@ diary off
 yPred = classify(net,xTest);
 plotconfusion(yTest, yPred);
 filename = ["plots/" + filenameBase + "_confusion_plot.fig"];
+
 saveas(gcf,filename)  % save figure as .png, you can change this
 save("models/" + filenameBase + "_model.mat", 'net');
 end
