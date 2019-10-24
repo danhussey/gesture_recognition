@@ -31,12 +31,12 @@ labels = {'left', 'right', 'nothing'};
 categories = length(labels);
 captures = categories*examplesPerCat;
 
-filenameBase = num2str(now) + "rh_config";
+filenameBase = num2str(now) + "flat_stationary_3";
 
 
 %%  2. Capture Data (Optional)
 if (cleanBuild == 0)
-    load('data/737715.9146.mat');
+    load('data/737722.9685flat_config_left_right.mat');
     
 elseif (cleanBuild == 1)
     
@@ -96,13 +96,14 @@ end
 
 
  %%  2.5 Construct deep learning model
-numHiddenUnits = 15;
-numClasses = categories;
-inputSize = features;
-
 if (cleanModel)
 gpu1 = gpuDevice(1)
 
+% inputSize = features;
+% maxEpochs = 500;
+% miniBatchSize = 100;
+% numHiddenUnits = 10;
+% numClasses = categories;
 % layers = [ ...
 %     sequenceInputLayer(inputSize)
 %     lstmLayer(numHiddenUnits,'OutputMode','last')
@@ -110,23 +111,21 @@ gpu1 = gpuDevice(1)
 %     softmaxLayer
 %     classificationLayer];
 
-
-maxEpochs = 100;
-miniBatchSize = 100;
-
-    inputSize = features;
-    numHiddenUnits1 = 125;
-    numHiddenUnits2 = 100;
-    numClasses = categories;
-    layers = [ ...
-        sequenceInputLayer(inputSize)
-        lstmLayer(numHiddenUnits1,'OutputMode','sequence')
-        dropoutLayer(0.2)
-        lstmLayer(numHiddenUnits2,'OutputMode','last')
-        dropoutLayer(0.2)
-        fullyConnectedLayer(numClasses)
-        softmaxLayer
-        classificationLayer];
+inputSize = features;
+maxEpochs = 500;
+miniBatchSize = 50;
+numHiddenUnits1 = 10;
+numHiddenUnits2 = 10;
+numClasses = categories;
+layers = [ ...
+    sequenceInputLayer(inputSize)
+    lstmLayer(numHiddenUnits1,'OutputMode','sequence')
+    dropoutLayer(0.2)
+    lstmLayer(numHiddenUnits2,'OutputMode','last')
+    dropoutLayer(0.2)
+    fullyConnectedLayer(numClasses)
+    softmaxLayer
+    classificationLayer];
 
 
 
@@ -159,12 +158,15 @@ options = trainingOptions('adam', ...
     'OutputFcn',@(info)saveTrainingPlot(info),...
     'ValidationData', {xTest, yTest});
 
+diary flat_config_left_right_3.txt
 net = trainNetwork(xTrain,yTrain,layers,options);
+diary off
 
 yPred = classify(net,xTest);
 plotconfusion(yTest, yPred);
-filename = ["plots/" + num2str(now) + "_confusion_plot.fig"];
-    saveas(gcf,filename)  % save figure as .png, you can change this
+filename = ["plots/" + filenameBase + "_confusion_plot.fig"];
+saveas(gcf,filename)  % save figure as .png, you can change this
+save("models/" + filenameBase + "_model.mat", 'net');
 end
 
 %% Visualie results
